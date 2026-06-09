@@ -71,12 +71,15 @@
     <div class="mb-3">
       <label for="reg-password" class="form-label small fw-medium">Password</label>
       <div class="input-group">
-        <input type="password" class="form-control" id="reg-password" placeholder="Min. 6 characters" />
+        <input type="password" class="form-control" id="reg-password" placeholder="Min. 8 characters" />
         <button class="btn btn-outline-secondary" type="button" onclick="togglePw('reg-password', this)">
           <i class="bi bi-eye"></i>
         </button>
       </div>
-      <div class="text-danger small mt-1 d-none" id="reg-pw-err">Password must be at least 6 characters.</div>
+      <div class="form-text text-muted" style="font-size: 0.75rem;">
+        Must include uppercase, number, and special character.
+      </div>
+      <div class="text-danger small mt-1 d-none" id="reg-pw-err">Password does not meet requirements.</div>
     </div>
 
     <div class="mb-3">
@@ -137,23 +140,30 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  function isStrongPassword(password) {
+    return password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[0-9]/.test(password) &&
+      /[!@#$%^&*_]/.test(password);
+  }
+
   async function handleRegister() {
     clearErrors();
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
-    const confirm = document.getElementById('reg-confirm').value;
+    const confirm  = document.getElementById('reg-confirm').value;
     let valid = true;
 
-    if (!name) { markInvalid('reg-name'); valid = false; }
-    if (!isValidEmail(email)) { markInvalid('reg-email'); valid = false; }
-    if (password.length < 6) { markInvalid('reg-password', 'reg-pw-err'); valid = false; }
-    if (password !== confirm) { markInvalid('reg-confirm', 'reg-confirm-err'); valid = false; }
+    if (!name)                       { markInvalid('reg-name');                       valid = false; }
+    if (!isValidEmail(email))        { markInvalid('reg-email');                      valid = false; }
+    if (!isStrongPassword(password)) { markInvalid('reg-password', 'reg-pw-err');     valid = false; }
+    if (password !== confirm)        { markInvalid('reg-confirm', 'reg-confirm-err'); valid = false; }
     if (!valid) return;
 
     setLoading('register-btn', 'register-spinner', true);
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('http://localhost:3000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })

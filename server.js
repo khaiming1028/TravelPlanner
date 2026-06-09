@@ -10,6 +10,7 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
 app.use('/api/trips', require('./routes/trips'));
+app.use('/api/auth', require('./routes/auth'));
 app.get('/api/config/maps', (req, res) => {
   res.json({ apiKey: process.env.MAP_API_KEY });
 });

@@ -142,7 +142,9 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Invalid credentials. Please try again.');
       token = data.token;
-      window.location.href = 'dashboard.html';
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('userName', data.name);
+      window.location.href = 'index.html';
     } catch (err) {
       showAlert('login-alert', err.message);
     } finally {
