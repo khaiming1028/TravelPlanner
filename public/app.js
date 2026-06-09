@@ -13,6 +13,15 @@ const submitBtn = document.getElementById('submit-btn');
 const formTitleLabel = document.getElementById('form-title-label');
 const formMainTitle = document.getElementById('form-main-title');
 
+const token = sessionStorage.getItem('token');
+const userName = sessionStorage.getItem('userName');
+
+if (!token) {
+  window.location.href = 'login.html';  // redirect if not logged in
+}
+
+document.getElementById('welcome-msg').textContent = `Welcome, ${userName}!`;
+
 // Application State Management variables
 let allTrips = [];
 let editingTripId = null;
@@ -266,8 +275,16 @@ async function loadGoogleMapsScript() {
     console.error('Error loading Google Maps API key:', error);
   }
 }
+
+function logout() {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('userName');
+  window.location.href = 'login.html';
+}
+
 // Automatically seed display metrics on initial webpage launch
 document.addEventListener('DOMContentLoaded', () => {
   fetchTrips();
   loadGoogleMapsScript(); // Ask backend for the key and load the map!
 });
+
