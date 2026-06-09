@@ -177,16 +177,55 @@ function prepareEdit(id) {
   // Metamorphose form look over to Update Mode styling
   formTitleLabel.innerText = "Modify Current Itinerary";
   formMainTitle.innerText = "Edit Your Details";
-  submitBtn.className = "btn btn-warning w-100 rounded-3 text-dark fw-bold";
-  submitBtn.innerHTML = `<i class="bi bi-check-circle me-2"></i>Save Structural Changes`;
+  submitBtn.className = "btn w-100 fw-medium";
+  submitBtn.style.backgroundColor = "#30404F";
+  submitBtn.style.color = "#fff";
+  submitBtn.style.borderRadius = "0.75rem";
+  submitBtn.onmouseenter = () => submitBtn.style.backgroundColor = "#1A2B3C";
+  submitBtn.onmouseleave = () => submitBtn.style.backgroundColor = "#30404F";
+  submitBtn.innerHTML = `Save Changes`;
+
+  // Wrap save + cancel in a flex row
+  if (!document.getElementById('cancel-btn')) {
+    // Wrap the submit button in a div
+    const btnRow = document.createElement('div');
+    btnRow.id = 'btn-row';
+    btnRow.className = 'd-flex gap-2 mt-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.id = 'cancel-btn';
+    cancelBtn.className = 'btn btn-outline-secondary w-100 fw-medium';
+    cancelBtn.style.borderRadius = "0.75rem";
+    cancelBtn.innerHTML = `Cancel`;
+    cancelBtn.onclick = resetForm;
+
+    submitBtn.classList.remove('mt-2');
+    submitBtn.parentNode.insertBefore(btnRow, submitBtn);
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(submitBtn);
+
+  }
 }
 
 function resetForm() {
   editingTripId = null;
   formTitleLabel.innerText = "Add a New Trip";
   formMainTitle.innerText = "Plan Your Journey";
-  submitBtn.className = "btn btn-add-trip";
-  submitBtn.innerHTML = `<i class="bi bi-plus-circle me-2"></i>Add Trip to Itinerary`;
+
+  // Move submit button back out of the row
+  const btnRow = document.getElementById('btn-row');
+  if (btnRow) {
+    btnRow.parentNode.insertBefore(submitBtn, btnRow);
+    btnRow.remove();
+  }
+
+  submitBtn.className = "btn btn-add-trip fw-medium";
+  submitBtn.style.backgroundColor = "";
+  submitBtn.style.color = "";
+  submitBtn.style.borderRadius = "";
+  submitBtn.innerHTML = `Add Trip to Itinerary`;
+  tripForm.reset();
 }
 
 // ==========================================
