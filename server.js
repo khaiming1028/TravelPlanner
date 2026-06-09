@@ -10,6 +10,9 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
 app.use('/api/trips', require('./routes/trips'));
+app.get('/api/config/maps', (req, res) => {
+  res.json({ apiKey: process.env.MAP_API_KEY });
+});
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
