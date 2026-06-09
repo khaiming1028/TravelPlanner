@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Trip = require('../models/trip.js'); // Import the blueprint
+const axios = require('axios'); // Import Axios to make external API calls
 
 // 1. CREATE: Save a new trip (Maps to your frontend form submission)
 router.post('/', async (req, res) => {
@@ -22,8 +23,39 @@ router.post('/', async (req, res) => {
 // 2. READ: Get all trips from the database (Maps to fetchTrips on your UI load)
 router.get('/', async (req, res) => {
   try {
-    const trips = await Trip.find().sort({ startDate: 1 }); // Sort by closest date first
-    res.json(trips);
+    const trips = await Trip.find().sort({ startDate: 1 });
+
+    // We use Promise.all to fetch weather for all trips in parallel efficiently
+    const tripsWithWeather = await Promise.all(trips.map(async (trip) => {
+      let weatherData = null;
+
+      try {
+        // Call OpenWeatherMap API using the destination and secret key from .env
+        const weatherResponse = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(trip.destination)}&units=metric&appid=${process.env.WEATHER_API_KEY}`
+        );
+
+        // Extract only the specific fields required by our UI assignment rubric
+        weatherData = {
+          temp: Math.round(weatherResponse.data.main.temp),
+          condition: weatherResponse.data.weather[0].main,
+          humidity: weatherResponse.data.main.humidity,
+          wind: Math.round(weatherResponse.data.wind.speed * 3.6) // Convert m/s to km/h
+        };
+      } catch (weatherError) {
+        console.error(`Could not fetch weather for ${trip.destination}:`, weatherError.message);
+        // Fallback data structure if the external API fails or key is still pending activation
+        weatherData = { temp: 'N/A', condition: 'Unavailable', humidity: 'N/A', wind: 'N/A' };
+      }
+
+      // Convert the Mongoose document to a plain object and attach our new weather field
+      return {
+        ...trip.toObject(),
+        weather: weatherData
+      };
+    }));
+
+    res.json(tripsWithWeather);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
