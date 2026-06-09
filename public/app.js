@@ -16,7 +16,10 @@ const formMainTitle = document.getElementById('form-main-title');
 // Application State Management variables
 let allTrips = [];
 let editingTripId = null;
-
+// Map Management variables
+let map;
+let markers = [];
+let geocoder;
 // ==========================================
 // 1. READ ACTION: Fetch and Display All Trips
 // ==========================================
@@ -35,6 +38,7 @@ function renderTrips() {
 
   if (allTrips.length === 0) {
     emptyState.classList.remove('d-none');
+    updateMapMarkers(); // Update map to show no pins
     return;
   }
   
@@ -84,6 +88,7 @@ function renderTrips() {
     `;
     tripsContainer.appendChild(tripCard);
   });
+  updateMapMarkers();
 }
 
 // ==========================================
@@ -175,5 +180,94 @@ function resetForm() {
   submitBtn.innerHTML = `<i class="bi bi-plus-circle me-2"></i>Add Trip to Itinerary`;
 }
 
+// ==========================================
+// 5. GOOGLE MAPS INTEGRATION
+// ==========================================
+function initMap() {
+  // Initialize the map centered on a global view
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 20, lng: 0 },
+    zoom: 2,
+    mapTypeControl: false,
+    streetViewControl: false
+  });
+  
+  geocoder = new google.maps.Geocoder();
+  document.getElementById("map").style.display = "block"; // Reveal map once loaded
+
+  // If trips already loaded from the database, plot them immediately
+  if (allTrips.length > 0) {
+    updateMapMarkers();
+  }
+}
+
+function updateMapMarkers() {
+  // Safety check to ensure Google Maps has finished loading
+  if (!map || !geocoder) return;
+
+  // 1. Clear existing markers from the map before re-rendering
+  markers.forEach(marker => marker.setMap(null));
+  markers = [];
+
+  const bounds = new google.maps.LatLngBounds();
+  let hasValidMarkers = false;
+
+  // 2. Loop through your trips and Geocode the destination strings
+  allTrips.forEach(trip => {
+    geocoder.geocode({ address: trip.destination }, (results, status) => {
+      if (status === "OK") {
+        const location = results[0].geometry.location;
+        
+        // Create the pin
+        const marker = new google.maps.Marker({
+          map: map,
+          position: location,
+          title: trip.destination,
+          animation: google.maps.Animation.DROP
+        });
+        
+        markers.push(marker);
+        bounds.extend(location);
+        hasValidMarkers = true;
+
+        // Auto-zoom and center the map to fit all trip locations perfectly
+        if (hasValidMarkers) {
+          map.fitBounds(bounds);
+          // Prevent zooming in too aggressively if there is only one trip
+          if (map.getZoom() > 10) {
+            map.setZoom(10);
+          }
+        }
+      } else {
+        console.warn(`Geocode failed for ${trip.destination} - Status: ${status}`);
+      }
+    });
+  });
+}
+
+// ==========================================
+// 6. DYNAMIC SCRIPT INJECTION
+// ==========================================
+async function loadGoogleMapsScript() {
+  try {
+    // 1. Fetch the API key securely from your backend
+    const response = await fetch('http://localhost:3000/api/config/maps');
+    const data = await response.json();
+
+    // 2. Create the HTML script tag dynamically
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&callback=initMap`;
+    script.async = true;
+    script.defer = true;
+
+    // 3. Inject it into the webpage
+    document.body.appendChild(script);
+  } catch (error) {
+    console.error('Error loading Google Maps API key:', error);
+  }
+}
 // Automatically seed display metrics on initial webpage launch
-document.addEventListener('DOMContentLoaded', fetchTrips);
+document.addEventListener('DOMContentLoaded', () => {
+  fetchTrips();
+  loadGoogleMapsScript(); // Ask backend for the key and load the map!
+});
