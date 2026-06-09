@@ -70,15 +70,17 @@ function renderTrips() {
       </div>
 
       <div class="weather-badge mt-3 d-flex align-items-center gap-3">
-        <div>
-          <div class="section-label mb-0">Live Weather</div>
-          <div class="temp">24°C</div>
-        </div>
-        <div class="vr"></div>
-        <div class="small">
-          <div><strong>Condition:</strong> Loading...</div>
-        </div>
-      </div>
+  <div>
+    <div class="section-label mb-0">Live Weather</div>
+    <div class="temp">${trip.weather ? trip.weather.temp + '°C' : 'N/A'}</div>
+  </div>
+  <div class="vr"></div>
+  <div class="small">
+    <div><strong>Condition:</strong> ${trip.weather ? trip.weather.condition : 'Unknown'}</div>
+    <div><strong>Humidity:</strong> ${trip.weather ? trip.weather.humidity + '%' : 'N/A'}</div>
+    <div><strong>Wind:</strong> ${trip.weather ? trip.weather.wind + ' km/h' : 'N/A'}</div>
+  </div>
+</div>
     `;
     tripsContainer.appendChild(tripCard);
   });
