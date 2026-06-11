@@ -1,9 +1,78 @@
 
 const API_URL = 'http://localhost:3000/api/trips';
 
+const citiesByCountry = {
+  'argentina': ['Buenos Aires', 'Córdoba', 'Rosario', 'Mendoza'],
+  'australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Gold Coast'],
+  'austria': ['Vienna', 'Salzburg', 'Innsbruck', 'Graz', 'Linz'],
+  'belgium': ['Brussels', 'Antwerp', 'Ghent', 'Bruges', 'Leuven'],
+  'brazil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Recife'],
+  'canada': ['Toronto', 'Vancouver', 'Montreal', 'Ottawa', 'Calgary', 'Edmonton'],
+  'chile': ['Santiago', 'Valparaíso', 'Viña del Mar', 'Puerto Varas'],
+  'china': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Xi’an'],
+  'colombia': ['Bogotá', 'Cartagena', 'Medellín', 'Barranquilla'],
+  'czechia': ['Prague', 'Brno', 'České Budějovice', 'Ostrava'],
+  'denmark': ['Copenhagen', 'Aarhus', 'Odense', 'Roskilde'],
+  'egypt': ['Cairo', 'Alexandria', 'Sharm El Sheikh', 'Luxor'],
+  'finland': ['Helsinki', 'Turku', 'Rovaniemi', 'Tampere'],
+  'france': ['Paris', 'Nice', 'Lyon', 'Marseille', 'Bordeaux', 'Toulouse'],
+  'germany': ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Dresden'],
+  'greece': ['Athens', 'Santorini', 'Mykonos', 'Thessaloniki'],
+  'hungary': ['Budapest', 'Debrecen', 'Szeged'],
+  'iceland': ['Reykjavik', 'Akureyri', 'Vík'],
+  'india': ['Delhi', 'Mumbai', 'Bangalore', 'Jaipur', 'Hyderabad', 'Chennai'],
+  'indonesia': ['Jakarta', 'Bali', 'Yogyakarta', 'Bandung'],
+  'ireland': ['Dublin', 'Cork', 'Galway', 'Limerick'],
+  'israel': ['Jerusalem', 'Tel Aviv', 'Haifa', 'Eilat'],
+  'italy': ['Rome', 'Venice', 'Florence', 'Milan', 'Bologna', 'Naples'],
+  'japan': ['Tokyo', 'Kyoto', 'Osaka', 'Sapporo', 'Hiroshima', 'Nara'],
+  'malaysia': ['Kuala Lumpur', 'Penang', 'Langkawi', 'Malacca'],
+  'mexico': ['Mexico City', 'Cancún', 'Guadalajara', 'Tulum'],
+  'morocco': ['Marrakesh', 'Casablanca', 'Fes', 'Tangier'],
+  'netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht'],
+  'new-zealand': ['Auckland', 'Wellington', 'Queenstown', 'Christchurch'],
+  'nigeria': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano'],
+  'norway': ['Oslo', 'Bergen', 'Trondheim', 'Stavanger'],
+  'peru': ['Lima', 'Cusco', 'Arequipa', 'Puno'],
+  'philippines': ['Manila', 'Cebu', 'Boracay', 'Davao'],
+  'poland': ['Warsaw', 'Kraków', 'Gdańsk', 'Wrocław'],
+  'portugal': ['Lisbon', 'Porto', 'Faro', 'Coimbra'],
+  'qatar': ['Doha', 'Al Khor', 'Al Wakrah'],
+  'romania': ['Bucharest', 'Cluj-Napoca', 'Timișoara'],
+  'russia': ['Moscow', 'St. Petersburg', 'Sochi', 'Kazan'],
+  'saudi-arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Al Ula'],
+  'singapore': ['Singapore'],
+  'south-africa': ['Cape Town', 'Johannesburg', 'Durban', 'Pretoria'],
+  'south-korea': ['Seoul', 'Busan', 'Jeju', 'Incheon'],
+  'spain': ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao', 'Granada'],
+  'sweden': ['Stockholm', 'Gothenburg', 'Malmö', 'Uppsala'],
+  'switzerland': ['Zurich', 'Geneva', 'Lucerne', 'Basel'],
+  'taiwan': ['Taipei', 'Kaohsiung', 'Taichung'],
+  'thailand': ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya'],
+  'turkey': ['Istanbul', 'Ankara', 'Antalya', 'Izmir'],
+  'united-arab-emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'],
+  'united-kingdom': ['London', 'Manchester', 'Edinburgh', 'Birmingham', 'Liverpool'],
+  'united-states': ['New York', 'Los Angeles', 'Miami', 'San Francisco', 'Chicago', 'Las Vegas'],
+  'vietnam': ['Hanoi', 'Ho Chi Minh City', 'Da Nang', 'Nha Trang'],
+};
+
+const allCountries = Object.keys(citiesByCountry)
+  .map(key => ({
+    key,
+    name: key
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' '),
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
 // DOM Element Selectors
 const tripForm = document.getElementById('trip-form');
 const destinationInput = document.getElementById('destination');
+const countryInput = document.getElementById('countryInput');
+const cityInput = document.getElementById('cityInput');
+const countryDropdown = document.getElementById('countryDropdown');
+const cityDropdown = document.getElementById('cityDropdown');
 const startDateInput = document.getElementById('start-date');
 const endDateInput = document.getElementById('end-date');
 const notesInput = document.getElementById('notes');
@@ -12,6 +81,114 @@ const emptyState = document.getElementById('empty-state');
 const submitBtn = document.getElementById('submit-btn');
 const formTitleLabel = document.getElementById('form-title-label');
 const formMainTitle = document.getElementById('form-main-title');
+
+function renderDropdown(dropdown, values) {
+  dropdown.innerHTML = '';
+  if (!values.length) {
+    dropdown.classList.add('d-none');
+    return;
+  }
+  values.forEach(value => {
+    const item = document.createElement('div');
+    item.className = 'search-option';
+    item.textContent = value;
+    dropdown.appendChild(item);
+  });
+  dropdown.classList.remove('d-none');
+}
+
+function filterCountries(query) {
+  const normalized = query.trim().toLowerCase();
+  return allCountries
+    .filter(country => country.name.toLowerCase().includes(normalized))
+    .map(country => country.name);
+}
+
+function getCountryKey(name) {
+  const lower = name.trim().toLowerCase();
+  return allCountries.find(country => country.name.toLowerCase() === lower)?.key || null;
+}
+
+function filterCities(countryKey, query) {
+  const cities = citiesByCountry[countryKey] || [];
+  const normalized = query.trim().toLowerCase();
+  return cities.filter(city => city.toLowerCase().includes(normalized));
+}
+
+function updateHiddenDestination() {
+  const countryKey = getCountryKey(countryInput.value);
+  const countryName = allCountries.find(c => c.key === countryKey)?.name || countryInput.value.trim();
+  const cityName = cityInput.value.trim();
+
+  if (cityName && countryName) {
+    destinationInput.value = `${cityName}, ${countryName}`;
+  } else if (cityName) {
+    destinationInput.value = cityName;
+  } else if (countryName) {
+    destinationInput.value = countryName;
+  } else {
+    destinationInput.value = '';
+  }
+}
+
+countryInput.addEventListener('input', () => {
+  const matches = filterCountries(countryInput.value);
+  renderDropdown(countryDropdown, matches);
+  const selectedCountryKey = getCountryKey(countryInput.value);
+
+  if (selectedCountryKey) {
+    cityInput.disabled = false;
+  } else {
+    cityInput.disabled = true;
+    cityInput.value = '';
+    cityDropdown.classList.add('d-none');
+  }
+  updateHiddenDestination();
+});
+
+countryInput.addEventListener('focus', () => {
+  const matches = filterCountries(countryInput.value);
+  renderDropdown(countryDropdown, matches);
+});
+
+countryDropdown.addEventListener('click', event => {
+  if (!event.target.classList.contains('search-option')) return;
+  countryInput.value = event.target.textContent;
+  countryDropdown.classList.add('d-none');
+  cityInput.disabled = false;
+  cityInput.value = '';
+  cityInput.focus();
+  updateHiddenDestination();
+});
+
+cityInput.addEventListener('input', () => {
+  const countryKey = getCountryKey(countryInput.value);
+  const matches = countryKey ? filterCities(countryKey, cityInput.value) : [];
+  renderDropdown(cityDropdown, matches);
+  updateHiddenDestination();
+});
+
+cityInput.addEventListener('focus', () => {
+  const countryKey = getCountryKey(countryInput.value);
+  const matches = countryKey ? filterCities(countryKey, cityInput.value) : [];
+  renderDropdown(cityDropdown, matches);
+});
+
+cityDropdown.addEventListener('click', event => {
+  if (!event.target.classList.contains('search-option')) return;
+  cityInput.value = event.target.textContent;
+  cityDropdown.classList.add('d-none');
+  updateHiddenDestination();
+});
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('#countryInput') && !event.target.closest('#countryDropdown')) {
+    countryDropdown.classList.add('d-none');
+  }
+  if (!event.target.closest('#cityInput') && !event.target.closest('#cityDropdown')) {
+    cityDropdown.classList.add('d-none');
+  }
+});
 
 const token = sessionStorage.getItem('token');
 const userName = sessionStorage.getItem('userName');
@@ -105,6 +282,7 @@ function renderTrips() {
 // ==========================================
 tripForm.addEventListener('submit', async (e) => {
   e.preventDefault(); // Stop page from refreshing!
+  updateHiddenDestination();
 
   const tripData = {
     destination: destinationInput.value,
@@ -169,6 +347,18 @@ function prepareEdit(id) {
 
   // Fill HTML input values with stored database records
   destinationInput.value = targetTrip.destination;
+  if (targetTrip.destination.includes(',')) {
+    const [city, country] = targetTrip.destination.split(',').map(part => part.trim());
+    countryInput.value = country || '';
+    cityInput.disabled = !country;
+    cityInput.value = city || '';
+    updateHiddenDestination();
+  } else {
+    countryInput.value = '';
+    cityInput.disabled = true;
+    cityInput.value = targetTrip.destination;
+    updateHiddenDestination();
+  }
   // Slice to YYYY-MM-DD so standard HTML calendar pickers can read it
   startDateInput.value = new Date(targetTrip.startDate).toISOString().split('T')[0];
   endDateInput.value = new Date(targetTrip.endDate).toISOString().split('T')[0];
@@ -226,6 +416,12 @@ function resetForm() {
   submitBtn.style.borderRadius = "";
   submitBtn.innerHTML = `Add Trip to Itinerary`;
   tripForm.reset();
+  countryInput.value = '';
+  cityInput.value = '';
+  cityInput.disabled = true;
+  destinationInput.value = '';
+  countryDropdown.classList.add('d-none');
+  cityDropdown.classList.add('d-none');
 }
 
 // ==========================================
