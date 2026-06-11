@@ -30,11 +30,23 @@ let map;
 let markers = [];
 let geocoder;
 // ==========================================
-// 1. READ ACTION: Fetch and Display All Trips
+// 1. READ ACTION: Fetch and Display All Trips (Updated with Token)
 // ==========================================
 async function fetchTrips() {
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}` // Pass the security token right here!
+      }
+    });
+
+    // If token is invalid or expired, clear it and boot them out to login
+    if (response.status === 401) {
+      logout();
+      return;
+    }
+
     allTrips = await response.json();
     renderTrips();
   } catch (error) {
@@ -47,14 +59,13 @@ function renderTrips() {
 
   if (allTrips.length === 0) {
     emptyState.classList.remove('d-none');
-    updateMapMarkers(); // Update map to show no pins
+    if (typeof updateMapMarkers === 'function') updateMapMarkers();
     return;
   }
   
   emptyState.classList.add('d-none');
 
   allTrips.forEach(trip => {
-    // Format dates to look nice on screen
     const start = new Date(trip.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     const end = new Date(trip.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -83,28 +94,28 @@ function renderTrips() {
       </div>
 
       <div class="weather-badge mt-3 d-flex align-items-center gap-3">
-  <div>
-    <div class="section-label mb-0">Live Weather</div>
-    <div class="temp">${trip.weather ? trip.weather.temp + '°C' : 'N/A'}</div>
-  </div>
-  <div class="vr"></div>
-  <div class="small">
-    <div><strong>Condition:</strong> ${trip.weather ? trip.weather.condition : 'Unknown'}</div>
-    <div><strong>Humidity:</strong> ${trip.weather ? trip.weather.humidity + '%' : 'N/A'}</div>
-    <div><strong>Wind:</strong> ${trip.weather ? trip.weather.wind + ' km/h' : 'N/A'}</div>
-  </div>
-</div>
+        <div>
+          <div class="section-label mb-0">Live Weather</div>
+          <div class="temp">${trip.weather && trip.weather.temp !== 'N/A' ? trip.weather.temp + '°C' : 'N/A'}</div>
+        </div>
+        <div class="vr"></div>
+        <div class="small">
+          <div><strong>Condition:</strong> ${trip.weather ? trip.weather.condition : 'Unknown'}</div>
+          <div><strong>Humidity:</strong> ${trip.weather && trip.weather.humidity !== 'N/A' ? trip.weather.humidity + '%' : 'N/A'}</div>
+          <div><strong>Wind:</strong> ${trip.weather && trip.weather.wind !== 'N/A' ? trip.weather.wind + ' km/h' : 'N/A'}</div>
+        </div>
+      </div>
     `;
     tripsContainer.appendChild(tripCard);
   });
-  updateMapMarkers();
+  
+  if (typeof updateMapMarkers === 'function') updateMapMarkers();
 }
-
 // ==========================================
-// 2. CREATE & UPDATE ACTIONS: Form Submission Handler
+// 2. CREATE & UPDATE ACTIONS (Updated with Token)
 // ==========================================
 tripForm.addEventListener('submit', async (e) => {
-  e.preventDefault(); // Stop page from refreshing!
+  e.preventDefault(); 
 
   const tripData = {
     destination: destinationInput.value,
@@ -118,7 +129,10 @@ tripForm.addEventListener('submit', async (e) => {
       // Execute UPDATE (PUT) operation
       const response = await fetch(`${API_URL}/${editingTripId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Secure header
+        },
         body: JSON.stringify(tripData)
       });
       
@@ -127,12 +141,14 @@ tripForm.addEventListener('submit', async (e) => {
       // Execute CREATE (POST) operation
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Secure header
+        },
         body: JSON.stringify(tripData)
       });
     }
 
-    // Refresh display values
     fetchTrips();
     tripForm.reset();
   } catch (error) {
@@ -141,23 +157,25 @@ tripForm.addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// 3. DELETE ACTION: Remove a Record
+// 3. DELETE ACTION: Remove a Record (Updated with Token)
 // ==========================================
 async function deleteTrip(id) {
   if (confirm('Are you sure you want to delete this trip itinerary?')) {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}` // Secure header
+        }
       });
       if (response.ok) {
-        fetchTrips(); // Refresh UI feed lists
+        fetchTrips(); 
       }
     } catch (error) {
       console.error('Error deleting trip:', error);
     }
   }
 }
-
 // ==========================================
 // 4. PREPARE EDIT MODULE: Populate inputs back to form
 // ==========================================
