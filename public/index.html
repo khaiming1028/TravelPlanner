@@ -145,6 +145,28 @@
       flex: 1 1 auto;
     }
 
+    .search-dropdown {
+      position: relative;
+      margin-top: 0.25rem;
+      max-height: 240px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      z-index: 10;
+    }
+
+    .search-option {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .search-option:hover {
+      background-color: #f1f4f8;
+    }
+
     #map { flex: 0 0 auto; }
     #trips-container { display: flex; flex-direction: column; gap: 12px; }
   </style>
@@ -175,10 +197,23 @@
 
           <div class="mb-3">
             <label class="form-label">Destination</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="bi bi-geo-alt text-primary"></i></span>
-              <input type="text" id="destination" class="form-control" placeholder="e.g. Tokyo, Japan" required />
+            <div class="row g-2">
+              <div class="col-12">
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="bi bi-flag text-primary"></i></span>
+                  <input type="text" id="countryInput" class="form-control" placeholder="Country" autocomplete="off" required />
+                </div>
+                <div id="countryDropdown" class="search-dropdown d-none"></div>
+              </div>
+              <div class="col-12">
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="bi bi-building text-primary"></i></span>
+                  <input type="text" id="cityInput" class="form-control" placeholder="City" autocomplete="off" disabled required />
+                </div>
+                <div id="cityDropdown" class="search-dropdown d-none"></div>
+              </div>
             </div>
+            <input type="hidden" id="destination" />
           </div>
 
           <div class="row g-3 mb-3">
